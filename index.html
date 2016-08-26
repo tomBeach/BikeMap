@@ -27,7 +27,7 @@
     </div>
 
     <!-- ======= menu ======= -->
-    <div class="menu">
+    <div id="menu" class="menu">
         <div id="dragBar">
             <h3 class="menu-label">menu</h3>
         </div>
@@ -83,11 +83,18 @@
         <div class="locText end">&nbsp;</div><span class="filter-label">end</span>
     </div>
 
+    <div id="error-box" class="modal">
+        <h3 class="modal-header" role="alert">Error</h3>
+        <span id="error-text">&nbsp;</span>
+        <button>Close</button>
+    </div>
+
     <!-- ======= map ======= -->
     <div id="map"></div>
 
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="https://api.tiles.mapbox.com/mapbox.js/v2.4.0/mapbox.js"></script>
+    <!-- <script src="https://raw.github.com/ireapps/census/master/tools/js/ire_census.js"></script> -->
     <script src='script.js'></script>
 
     <script type="text/javascript">

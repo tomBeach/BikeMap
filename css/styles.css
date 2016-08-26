@@ -1,5 +1,6 @@
 /* ======= general ======= */
 body {
+    /*position: relative;*/
     margin:0;
     padding:0;
     box-sizing: border-box;
@@ -25,14 +26,14 @@ body {
 /* ======= menu ======= */
 .menu {
     position: absolute;
-    left: 200px;
-    top: 200px;
+    left: 80px;
+    top: 80px;
     width: 240px;
     height: auto;
     padding: 0;
     background-color: rgba(250, 250, 255, 1);
-    box-shadow: 5px 5px 5px #bbb;
-    border-radius: 2px;
+    box-shadow: 5px 5px 5px #aaa;
+    border-radius: 5px;
     z-index: 9;
 }
 #dragBar {
@@ -120,6 +121,10 @@ body {
     color: white;
     background-color: #5b6c62;
 }
+.region.selected:hover {
+    color: white;
+    background-color: red;
+}
 #clearAll-r, #clearAll-b {
     width: 36px;
     height: 22px;
@@ -131,6 +136,10 @@ body {
     background-color: #ccc;
     border: 2px solid #5b6c62;
     border-radius: 2px;
+}
+#clearAll-r:hover, #clearAll-b:hover {
+    color: white;
+    background-color: red;
 }
 .label-r, .label-x {
     margin: 0;
@@ -178,4 +187,41 @@ body {
     margin-left: 1px;
     margin-right: 15px;
     border-radius: 9px;
+}
+
+/* == errors */
+#error-box {
+    position: absolute;
+    background-color: #fff;
+    padding-bottom: 8px;
+    width: 240px;
+    max-width: 95%;
+    display: none;
+    left: 80px;
+    bottom: 50px;
+    z-index: 99;
+}
+#error-box button {
+    background-color: #5b6c62;
+    border: 0;
+    border-radius: 3px;
+    color: #fff;
+    font-weight: bold;
+    padding: 7px 13px;
+    display: block;
+    margin: auto;
+    margin-top: 14px;
+}
+#error-text {
+    display: block;
+    margin: 8px 15px;
+    color: red;
+}
+.modal-header {
+    background-color: #5b6c62;
+    color: #fff;
+    padding: 7px 15px;
+}
+.modal {
+    box-shadow: 5px 5px 5px #bbb;
 }

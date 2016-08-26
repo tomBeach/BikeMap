@@ -24,9 +24,9 @@ var defaultDisplay = {
 var defaultMap = {
     mapEl: document.getElementById("map"),
     mapStyle: "mapbox.light",
-    centerLat: 38.99,
-    centerLng: -77.20,
-    zoom: 11,
+    centerLat: 38.8990,
+    centerLng: -77.0354,
+    zoom: 12,
     zoomControl: false,
     dataLayers: [],
     markersGroup: [],
@@ -145,7 +145,10 @@ var regions = {
         id: "PG_2",
         name: "Prince George's County",
         box: { NW: [null, null], SE: [null, null] },
-        laneFiles: { lanes:null, paths:null, trails:null },
+        laneFiles: {
+            lanes: "MD_PrinceGeorgesCounty.geojson",
+            paths:null,
+            trails:null },
         bufferFiles: { ft500:null, ft1000:null, ft2500:null, ft5280:null }
     },
 }
@@ -153,7 +156,6 @@ var regions = {
 
 // ======= app =======
 var app;
-// $(() => app.initialize());
 app = {
     map: defaultMap,
     state: defaultState,
@@ -166,11 +168,88 @@ app = {
         app.activeMap = app.initMap();
         app.activateMap();
         app.activateMenu();
+        app.activateErrorModal();
+        // == DEV functions ======= ======= =======
+        // app.getCensusData();
+        // app.displayCensusTracts();
+    },
+
+    // ======= getCensusTract =======
+    getCensusTract: function(latLng) {
+        console.log("getCensusTract");
+
+    },
+
+    // ======= getCensusTracts =======
+    getCensusTracts: function(latLng) {
+        console.log("getCensusTracts");
+
+        var url = "GeojsonFiles/" + "tl_2016_24_tract.geojson";
+
+        $.ajax({
+            url: url,
+            method: "GET",
+            dataType: "json"
+        }).done(function(jsonData){
+            console.log("*** ajax success ***");
+            console.dir(jsonData);
+            latLng ?
+                app.getCensusTract(latLng, jsonData) :
+                L.geoJson(jsonData).addTo(app.activeMap);
+        }).fail(function(response){
+            console.log("*** ajax fail T ***");
+            if (response.status != "200") {
+                var errorText = "Sorry.  Data is not available for that selection."
+                $('#error-box').css('display', 'block');
+                $('#error-text').text(errorText);
+            }
+        });
+
+    },
+
+    // ======= getCensusData =======
+    getCensusData: function(latLng) {
+        console.log("getCensusData");
+
+        // test params
+        var url = "http://censusdata.ire.org/08/001.jsonp";
+        var params = "";
+        // var params = "&for=county:" + "001" + "&in=state:" + "01";
+        // var url = "http://api.census.gov/data/2010/sf1?key=21ff210b5684b96e99d5462e84d09e2cde40920c&get=P0010001,NAME" + params;
+        // var url = "http://data.fcc.gov/api/block/find?format=json&latitude=28.35975&longitude=-81.421988&showall=true";
+        // var url = "http://api.census.gov/data/2010/sf1?get=P0010001,NAME&for=block:1213&in=state:02+county:290+tract:00100";
+        app.censusAjaxQueue(url, params);
+    },
+
+    // ======= censusAjaxQueue =======
+    censusAjaxQueue: function(url, region) {
+        console.log("censusAjaxQueue");
+        var censusData = null;
+
+        $.ajax({
+            url: url,
+            method: "GET",
+            dataType: "json"
+        }).done(function(jsonData){
+            console.log("*** ajax success ***");
+            console.dir(jsonData);
+        }).fail(function(response){
+            if (response.status != "200") {
+                var errorText = "Sorry.  Data is not available for that selection."
+                $('#error-box').css('display', 'block');
+                $('#error-text').text(errorText);
+            }
+        });
     },
 
     // ======= activateMenu =======
     activateMenu: function() {
 
+        var menu = document.getElementById("menu");
+        var dragBar = document.getElementById("dragBar");
+        var offset = { x: 0, y: 0 };
+
+        // == menu filter functions
         $('.region, .buffer').on('click', function(e) {
             event.stopPropagation();
             app.toggleFilterState(e.currentTarget);
@@ -180,14 +259,36 @@ app = {
             event.stopPropagation();
             app.clearSelectAll(e.currentTarget);
         });
-        $('.region, .buffer, .start, .end, #clearAll-r').on('mouseenter', function(e) {
+        $('.region, .buffer, .start, .end, #clearAll-r, #dragBar').on('mouseenter', function(e) {
             event.stopPropagation();
             updateHoverText(e.currentTarget, "enter");
         });
-        $('.region, .buffer, .start, .end, #clearAll-r').on('mouseleave', function(e) {
+        $('.region, .buffer, .start, .end, #clearAll-r, #dragBar').on('mouseleave', function(e) {
             event.stopPropagation();
             updateHoverText(e.currentTarget, "leave");
         });
+
+        // == menu drag functions
+        $('#dragBar').on('mousedown', function(e) {
+            initDrag(e);
+        });
+
+        function initDrag(e){
+            offset.x = e.clientX - menu.offsetLeft;
+            offset.y = e.clientY - menu.offsetTop;
+            window.addEventListener('mousemove', menuMove, true);
+            window.addEventListener('mouseup', mouseUp, true);
+        }
+        function menuMove(e){
+            menu.style.position = 'absolute';
+            var top = e.clientY - offset.y;
+            var left = e.clientX - offset.x;
+            menu.style.top = top + 'px';
+            menu.style.left = left + 'px';
+        }
+        function mouseUp() {
+            window.removeEventListener('mousemove', menuMove, true);
+        }
 
         // ======= updateHoverText =======
         function updateHoverText(hoverEl, enterLeave) {
@@ -218,6 +319,8 @@ app = {
                         hoverText = "select all regions";
                     } else if (($(hoverEl).attr('id') == 'clearAll-r') && ($(hoverEl).text() == 'clear')) {
                         hoverText = "clear all regions/buffers";
+                    } else if ($(hoverEl).attr('id') == 'dragBar') {
+                        hoverText = "draggable";
                     }
                 }
             } else {
@@ -230,6 +333,12 @@ app = {
             }
             $("#hoverText").text(hoverText);
         }
+    },
+
+    activateErrorModal: function() {
+        $('#error-box button').on('click', function(e) {
+            $('#error-box').fadeOut(200);
+        });
     },
 
     // ======= toggleFilterState =======
@@ -529,15 +638,21 @@ app = {
                             url = "bikelanes/" + laneData;
                             app.laneAjaxQueue(url, region);
                         } else {
-                            console.log("=== ALERT: Missing data for", region);
+                            var errorText = "=== ALERT: Missing data for " + region;
+                            $('#error-box').css('display', 'block');
+                            $('#error-text').text(errorText);
                         }
                     } else {
                         app.display.regionsArray = ["AL", "AR", "DC", "MO", "PG"];
                     }
                 }
             }
-        }).fail(function(){
-            console.log("*** ajax fail T ***");
+        }).fail(function(response){
+            if (response.status != "200") {
+                var errorText = "Sorry.  Data is not available for that selection."
+                $('#error-box').css('display', 'block');
+                $('#error-text').text(errorText);
+            }
         });
     },
 
@@ -552,8 +667,12 @@ app = {
             var bufferFeatures = L.mapbox.featureLayer(parsedJson).addTo(app.activeMap);
             app.state[region].bufferLayers[buffer] = bufferFeatures;
             bufferFeatures.setStyle(app.display.bufferStyle);
-        }).fail(function(){
-            console.log("*** ajax fail T ***");
+        }).fail(function(response){
+            if (response.status != "200") {
+                var errorText = "Sorry.  Data is not available for that selection."
+                $('#error-box').css('display', 'block');
+                $('#error-text').text(errorText);
+            }
         });
     },
 
@@ -584,6 +703,7 @@ app = {
             !$("#startLoc").val() ?
                 app.addRouteMarker("start", latLng) :
                 app.addRouteMarker("end", latLng);
+            app.getCensusTracts(latLng);
         });
 
     },
@@ -605,8 +725,12 @@ app = {
             var parsedJson = $.parseJSON(jsonData);
             updateRouteData(parsedJson);
             makeRouteMarker(parsedJson);
-        }).fail(function(){
-            console.log("*** ajax fail ***");
+        }).fail(function(response){
+            if (response.status != "200") {
+                var errorText = "Sorry.  Data is not available for that selection."
+                $('#error-box').css('display', 'block');
+                $('#error-text').text(errorText);
+            }
         });
 
         // ======= updateRouteData =======
