@@ -8,6 +8,10 @@ var defaultDisplay = {
     loopCount: 0,
     allRegions: false,
     regionsArray: ["AL", "AR", "DC", "MO", "PG"],
+    tractStyle: {
+        "fill": "red",
+        "stroke": "#1A3742",
+        "stroke-width": 1 },
     bufferStyle: { "fill": "#56B6DB", "stroke": "#1A3742", "stroke-width": 2 },
 
     // ======= toggleClearAll =======
@@ -26,7 +30,7 @@ var defaultMap = {
     mapStyle: "mapbox.light",
     centerLat: 38.8990,
     centerLng: -77.0354,
-    zoom: 12,
+    zoom: 11,
     zoomControl: false,
     dataLayers: [],
     markersGroup: [],
@@ -165,66 +169,120 @@ app = {
 
     // ======= initialize =======
     initialize: function() {
+        console.log("initialize");
         app.activeMap = app.initMap();
         app.activateMap();
         app.activateMenu();
-        app.activateErrorModal();
-        // == DEV functions ======= ======= =======
-        // app.getCensusData();
-        // app.displayCensusTracts();
+        app.activateDraggers();
     },
 
-    // ======= getCensusTract =======
-    getCensusTract: function(latLng) {
-        console.log("getCensusTract");
+    // ======= activateDraggers =======
+    activateDraggers: function() {
 
-    },
-
-    // ======= getCensusTracts =======
-    getCensusTracts: function(latLng) {
-        console.log("getCensusTracts");
-
-        var url = "GeojsonFiles/" + "tl_2016_24_tract.geojson";
-
-        $.ajax({
-            url: url,
-            method: "GET",
-            dataType: "json"
-        }).done(function(jsonData){
-            console.log("*** ajax success ***");
-            console.dir(jsonData);
-            latLng ?
-                app.getCensusTract(latLng, jsonData) :
-                L.geoJson(jsonData).addTo(app.activeMap);
-        }).fail(function(response){
-            console.log("*** ajax fail T ***");
-            if (response.status != "200") {
-                var errorText = "Sorry.  Data is not available for that selection."
-                $('#error-box').css('display', 'block');
-                $('#error-text').text(errorText);
-            }
+        // ======= menu drag functions =======
+        var dragger, startLoc;
+        $('#menuDrag, #infoDrag').on('mousedown', function(e) {
+            dragger = $(e.currentTarget).parent('div');
+            e.preventDefault();
+            initDrag(e);
         });
 
+        function initDrag(e){
+            var locXY = $(dragger).offset();
+            $(dragger).css('position', 'absolute');
+            startLoc = { x: 0, y: 0 };
+            startLoc.x = e.clientX - locXY.left;
+            startLoc.y = e.clientY - locXY.top;
+            window.addEventListener('mousemove', draggerMove, true);
+            window.addEventListener('mouseup', mouseUp, true);
+        }
+        function draggerMove(e){
+            var top = e.clientY - startLoc.y;
+            var left = e.clientX - startLoc.x;
+            $(dragger).css('top', top + 'px');
+            $(dragger).css('left', left + 'px');
+        }
+        function mouseUp() {
+            window.removeEventListener('mousemove', draggerMove, true);
+        }
+
+        // ======= error box =======
+        function activateErrorModal() {
+            $('#error-box button').on('click', function(e) {
+                $('#error-box').fadeOut(200);
+            });
+        }
+    },
+
+    // ======= activateMap =======
+    activateMap: function() {
+
+        // ======= mouse location =======
+        app.activeMap.on("mousemove", function (e) {
+            document.getElementById("lat").innerHTML = (e.latlng.lat).toFixed(4);
+            document.getElementById("lng").innerHTML = (e.latlng.lng).toFixed(4);
+        });
+
+        // ======= mouse location =======
+        app.activeMap.on("click", function (e) {
+            var latLng = [JSON.stringify(e.latlng.lat), JSON.stringify(e.latlng.lng)];
+            !$("#startLoc").val() ?
+                app.addRouteMarker("start", latLng) :
+                app.addRouteMarker("end", latLng);
+            // == DEV functions ======= ======= =======
+            // app.getCensusData(latLng);
+        });
     },
 
     // ======= getCensusData =======
     getCensusData: function(latLng) {
         console.log("getCensusData");
 
-        // test params
-        var url = "http://censusdata.ire.org/08/001.jsonp";
-        var params = "";
-        // var params = "&for=county:" + "001" + "&in=state:" + "01";
-        // var url = "http://api.census.gov/data/2010/sf1?key=21ff210b5684b96e99d5462e84d09e2cde40920c&get=P0010001,NAME" + params;
-        // var url = "http://data.fcc.gov/api/block/find?format=json&latitude=28.35975&longitude=-81.421988&showall=true";
-        // var url = "http://api.census.gov/data/2010/sf1?get=P0010001,NAME&for=block:1213&in=state:02+county:290+tract:00100";
-        app.censusAjaxQueue(url, params);
+        var url = "/proxy";
+        var lat = latLng[0];
+        var lng = latLng[1];
+
+        // == TESTING
+        // http://api.census.gov/data/2010/acs5/profile?key=...&get=CATEGORY&for=GEOGRAPHY[&in=GEOGRAPHY2]
+        // http://api.census.gov/data/2010/acs5/profile?key=21ff210b5684b96e99d5462e84d09e2cde40920c&get=DP02_0001PE&for=state:06
+
+        // == WORKING
+        // geocoding.geo.census.gov/geocoder/geographies/coordinates?x=lng&y=lat&benchmark=4&vintage=4&format=json
+        var apiParams = {
+            remoteHost: "geocoding.geo.census.gov",
+            remotePath: "/geocoder/geographies/coordinates?x=" + lng + "&y=" + lat + "&benchmark=4&vintage=4&format=json"
+        };
+        app.censusAjaxQueue(url, apiParams);
     },
 
     // ======= censusAjaxQueue =======
-    censusAjaxQueue: function(url, region) {
+    censusAjaxQueue: function(url, apiParams) {
         console.log("censusAjaxQueue");
         var censusData = null;
+        var self = this;
+
+        $.ajax({
+            url: url,
+            data: JSON.stringify(apiParams),
+            method: "POST",
+            dataType: "json",
+            contentType: "application/json"
+        }).done(function(jsonData){
+            console.log("*** ajax success ***");
+            console.dir(jsonData);
+            self.displayData(jsonData);
+            self.getBoundaryData(jsonData.result.geographies["Census Tracts"][0].GEOID);
+        }).fail(function(){
+            console.log("*** ajax fail T ***");
+        });
+    },
+
+    // ======= getBoundaryData =======
+    getBoundaryData: function(GEOID) {
+        console.log("getBoundaryData");
+
+        var url = "GeojsonFiles/" + "tl_2016_11_tract.geojson";
+        var nextFeature, nextFeatureId, targetFeature;
 
         $.ajax({
             url: url,
@@ -233,43 +291,85 @@ app = {
         }).done(function(jsonData){
             console.log("*** ajax success ***");
             console.dir(jsonData);
-        }).fail(function(response){
-            if (response.status != "200") {
-                var errorText = "Sorry.  Data is not available for that selection."
-                $('#error-box').css('display', 'block');
-                $('#error-text').text(errorText);
+            $(jsonData.features).each(function(index, feature) {
+                nextFeatureId = feature.properties.GEOID;
+                if (nextFeatureId == GEOID) {
+                    targetFeature = feature;
+                    return false;
+                }
+            })
+            var censusTract = L.geoJson(targetFeature, {
+                style: style
+            }).addTo(app.activeMap);
+
+            function style(feature) {
+                console.log("style");
+                return {
+                        weight: 2,
+                        opacity: 1,
+                        color: "#004529",
+                        fillOpacity: 0.3,
+                        fillColor: '#ff0000'
+                };
             }
+        }).fail(function(){
+            console.log("*** ajax fail T ***");
         });
+    },
+
+    // ======= displayData =======
+    displayData: function(jsonData) {
+        console.log("displayData");
+        // console.dir(jsonData);
+        // var dataString = jsonData.result.geographies["Census Tracts"][0].NAME + "   geoid " + jsonData.result.geographies["Census Tracts"][0].GEOID;
+        // $("#data").text(dataString);
+        var dataString = jsonData.result.geographies["Census Tracts"][0].NAME;
+        $("#hoverText").text(dataString);
+
     },
 
     // ======= activateMenu =======
     activateMenu: function() {
+        console.log("activateMenu");
 
         var menu = document.getElementById("menu");
         var dragBar = document.getElementById("dragBar");
         var offset = { x: 0, y: 0 };
 
+        // == error-box functions
+        $('#close-error, #close-message').on('click', function(e) {
+            e.stopPropagation();
+            $('#error-box, #message-box').css('display', 'none');
+        });
+
         // == menu filter functions
         $('.region, .buffer').on('click', function(e) {
-            event.stopPropagation();
+            e.stopPropagation();
             app.toggleFilterState(e.currentTarget);
             app.toggleFilterData(e.currentTarget);
         });
         $('#clearAll').on('click', function(e) {
-            event.stopPropagation();
+            e.stopPropagation();
             app.clearSelectAll(e.currentTarget);
         });
-        $('.region, .buffer, .start, .end, #clearAll-r, #dragBar').on('mouseenter', function(e) {
-            event.stopPropagation();
+        $('.region, .buffer, .start, .end, #clearAll-r, #menuDrag, #infoDrag').on('mouseenter', function(e) {
+            e.stopPropagation();
             updateHoverText(e.currentTarget, "enter");
         });
-        $('.region, .buffer, .start, .end, #clearAll-r, #dragBar').on('mouseleave', function(e) {
-            event.stopPropagation();
+        $('.region, .buffer, .start, .end, #clearAll-r, #menuDrag, #infoDrag').on('mouseleave', function(e) {
+            e.stopPropagation();
             updateHoverText(e.currentTarget, "leave");
+        });
+        $(window).on('mousemove', function(e) {
+            e.stopPropagation();
+            if ($(e.currentTarget).parent().hasClass('menu')) {
+                $("#hoverText").text(hoverText);
+            }
         });
 
         // == menu drag functions
         $('#dragBar').on('mousedown', function(e) {
+            console.log("mousedown");
             initDrag(e);
         });
 
@@ -308,6 +408,8 @@ app = {
                             hoverText = "1 mile buffer";
                         }
                     }
+                } else if ($(hoverEl).parent().hasClass('menu')) {
+                    hoverText = "drag me!";
                 } else {
                     if ($(hoverEl).hasClass('region')) {
                         hoverText = regions[$(hoverEl).closest('tr').attr('id')].name;
@@ -329,16 +431,10 @@ app = {
                         $(hoverEl).removeClass("entered");
                     }
                 }
-                hoverText = ".";
+                hoverText = "";
             }
             $("#hoverText").text(hoverText);
         }
-    },
-
-    activateErrorModal: function() {
-        $('#error-box button').on('click', function(e) {
-            $('#error-box').fadeOut(200);
-        });
     },
 
     // ======= toggleFilterState =======
@@ -647,12 +743,8 @@ app = {
                     }
                 }
             }
-        }).fail(function(response){
-            if (response.status != "200") {
-                var errorText = "Sorry.  Data is not available for that selection."
-                $('#error-box').css('display', 'block');
-                $('#error-text').text(errorText);
-            }
+        }).fail(function(){
+            console.log("*** ajax fail T ***");
         });
     },
 
@@ -667,12 +759,10 @@ app = {
             var bufferFeatures = L.mapbox.featureLayer(parsedJson).addTo(app.activeMap);
             app.state[region].bufferLayers[buffer] = bufferFeatures;
             bufferFeatures.setStyle(app.display.bufferStyle);
-        }).fail(function(response){
-            if (response.status != "200") {
-                var errorText = "Sorry.  Data is not available for that selection."
-                $('#error-box').css('display', 'block');
-                $('#error-text').text(errorText);
-            }
+        }).fail(function(){
+            var errorText = "=== ALERT: Missing data for " + region;
+            $('#error-box').css('display', 'block');
+            $('#error-text').text(errorText);
         });
     },
 
@@ -684,28 +774,8 @@ app = {
             app.map.mapStyle,
             { zoomControl: false })
                 .setView([app.map.centerLat, app.map.centerLng], app.map.zoom);
-        new L.Control.Zoom({ position: "bottomright" }).addTo(map);
+        new L.Control.Zoom({ position: "topright" }).addTo(map);
         return map;
-    },
-
-    // ======= activateMap =======
-    activateMap: function() {
-
-        // ======= mouse location =======
-        app.activeMap.on("mousemove", function (e) {
-            document.getElementById("lat").innerHTML = (e.latlng.lat).toFixed(4);
-            document.getElementById("lng").innerHTML = (e.latlng.lng).toFixed(4);
-        });
-
-        // ======= mouse location =======
-        app.activeMap.on("click", function (e) {
-            var latLng = [JSON.stringify(e.latlng.lat), JSON.stringify(e.latlng.lng)];
-            !$("#startLoc").val() ?
-                app.addRouteMarker("start", latLng) :
-                app.addRouteMarker("end", latLng);
-            app.getCensusTracts(latLng);
-        });
-
     },
 
     // ======= addRouteMarker =======
@@ -725,12 +795,8 @@ app = {
             var parsedJson = $.parseJSON(jsonData);
             updateRouteData(parsedJson);
             makeRouteMarker(parsedJson);
-        }).fail(function(response){
-            if (response.status != "200") {
-                var errorText = "Sorry.  Data is not available for that selection."
-                $('#error-box').css('display', 'block');
-                $('#error-text').text(errorText);
-            }
+        }).fail(function(){
+            console.log("*** ajax fail ***");
         });
 
         // ======= updateRouteData =======

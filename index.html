@@ -5,33 +5,54 @@
     <meta charset=utf-8 />
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>WABA Bike Map Project</title>
+    <title>WABA BikeMap -- gh-pages</title>
 
     <!-- ======= mapbox ======= -->
     <link rel="stylesheet" href="https://www.mapbox.com/base/latest/base.css" />
     <link rel="stylesheet" href="https://api.tiles.mapbox.com/mapbox.js/v2.4.0/mapbox.css" />
 
     <!-- ======= styles ======= -->
-    <link rel="stylesheet" href="css/styles.css" />
+    <!-- <link rel="stylesheet" href="../css/styles.css" /> -->
+    <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
 
+    <!-- ======= message ======= -->
+    <div id="message-box" class="menu">
+        <div id="messageHead">
+            <h3 class="box-label">note</h3>
+        </div>
+        <span id="message-text">This is a work-in-progress testing site for a mapping project involving dcFemTech, WABA and CodeForDC.  For more current versions please visit <a href="https://github.com/dcfemtech/hackforgood-waba-map">here</a>.</span>
+        <button id="close-message">Close</button>
+    </div>
+
     <!-- ======= info ======= -->
-    <div id="info">
-        <h2 class="header-text">location</h2>
+    <div id="info" class="menu">
+        <div id="infoDrag">
+            <h3 class="box-label">location</h3>
+        </div>
         <div id="loc">
-            <p>latitude:  <span id="lat">&nbsp;</span></p>
-            <p>longitude:  <span id="lng">&nbsp;</span></p>
+            <p>latitude: <span id="lat">&nbsp;</span></p>
+            <p>longitude: <span id="lng">&nbsp;</span></p>
         </div>
     </div>
 
-    <!-- ======= menu ======= -->
-    <div id="menu" class="menu">
-        <div id="dragBar">
-            <h3 class="menu-label">menu</h3>
+    <!-- ======= error box ======= -->
+    <div id="error-box" class="modal">
+        <div id="errorFixed">
+            <h3 class="box-label" role="alert">error</h3>
         </div>
-        <div id="hoverText">.</div>
+        <span id="error-text">&nbsp;</span>
+        <button id="close-error">Close</button>
+    </div>
+
+    <!-- ======= menu ======= -->
+    <div id="mapMenu" class="menu">
+        <div id="menuDrag">
+            <h3 class="box-label">menu</h3>
+        </div>
+        <div id="hoverText"></div>
         <table id="filters">
             <tr class="table-header">
                 <th class="td-r"><span class="filter-label">regions</span></th>
@@ -83,18 +104,17 @@
         <div class="locText end">&nbsp;</div><span class="filter-label">end</span>
     </div>
 
-    <div id="error-box" class="modal">
-        <h3 class="modal-header" role="alert">Error</h3>
-        <span id="error-text">&nbsp;</span>
-        <button>Close</button>
-    </div>
-
     <!-- ======= map ======= -->
     <div id="map"></div>
+
+    <!-- ======= data ======= -->
+    <div id="data"></div>
 
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="https://api.tiles.mapbox.com/mapbox.js/v2.4.0/mapbox.js"></script>
     <!-- <script src="https://raw.github.com/ireapps/census/master/tools/js/ire_census.js"></script> -->
+    <!-- <script src='../js/script.js'></script> -->
+    <!-- <script src="./public/js/script.js"></script> -->
     <script src='script.js'></script>
 
     <script type="text/javascript">
