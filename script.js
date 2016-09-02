@@ -219,6 +219,8 @@ app = {
 
         // ======= mouse location =======
         app.activeMap.on("mousemove", function (e) {
+            console.log("mousemove");
+            console.log(e.latlng.lat);
             document.getElementById("lat").innerHTML = (e.latlng.lat).toFixed(4);
             document.getElementById("lng").innerHTML = (e.latlng.lng).toFixed(4);
         });

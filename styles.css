@@ -2,7 +2,6 @@
 body {
     margin:0;
     padding:0;
-    font-family: sans-serif;
     box-sizing: border-box;
 }
 #map {
@@ -25,7 +24,6 @@ body {
     float: left;
     left: 20px;
     width: 240px;
-    color: white;
     background-color: rgba(255, 255, 255, 0.8);
     box-shadow: 5px 5px 5px #bbb;
     border-radius: 2px;
@@ -34,7 +32,6 @@ body {
 #menuDrag, #infoDrag, #errorFixed {
     margin: 0;
     padding: 10px;
-    text-align: center;
     background-color: #5b6c62;
 }
 #message-box {
